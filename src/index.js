@@ -11,6 +11,7 @@ class App extends React.Component {
 		super(props);
 		this.state = {
 			message: props.message,
+			task: "taskA",
 		};
 	}
 
@@ -24,24 +25,44 @@ class App extends React.Component {
 	submitData() {
 		this.setState({ predict: "now loading..." })
 		console.log("sent", this.state);
-		fetch(SERVER + "res/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-CSRFToken": this.getCSRFtoken(),
-			},
-			body: JSON.stringify({
-				image: this.state.image, 
-				address: document.getElementById("address").value,
-				token_id: document.getElementById("token_id").value,
+		if (this.state.task === "taskA") {
+			fetch(SERVER + "res/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-CSRFToken": this.getCSRFtoken(),
+				},
+				body: JSON.stringify({
+					task: this.state.task,
+					address: document.getElementById("address").value,
+					token_id: document.getElementById("token_id").value,
+				})
 			})
-		})
-		.then((res) => res.json())
-		.then((res) => {
-			console.log("receive", res);
-			this.setState({ image: res.image, predict: res.predict, task: res.task });
-			this.render();
-		});
+			.then((res) => res.json())
+			.then((res) => {
+				console.log("receive", res);
+				this.setState({ image: res.image, predict: res.predict, task: res.task });
+				this.render();
+			});
+		} else {
+			fetch(SERVER + "res/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-CSRFToken": this.getCSRFtoken(),
+				},
+				body: JSON.stringify({
+					task: this.state.task,
+					image: this.state.image, 
+				})
+			})
+			.then((res) => res.json())
+			.then((res) => {
+				console.log("receive", res);
+				this.setState({ image: res.image, predict: res.predict, task: res.task });
+				this.render();
+			});
+		}
 	}
 
 	SaveImage(e) {
@@ -62,40 +83,60 @@ class App extends React.Component {
 	ResetData() {
 		console.log("reset data", this.state);
 		this.setState({ image: null, predict: null });
-		document.getElementById("address").value = null;
-		document.getElementById("token_id").value = null;
+		if (this.state.task === "taskA") {
+			document.getElementById("address").value = null;
+			document.getElementById("token_id").value = null;
+		}
 	}
 
-	renderDropzone() {
-		return (
-			<body>
-			<h1>Predict NFT price in the future</h1>
-			    <div>
-			      <label for="address">asset contract address</label><br />
-			      <input type="text" id="address" /><br />
-		            </div>
-			    <div>
-			      <label for="token_id">token id</label><br />
-			      <input type="text" id="token_id" /><br />
-			    </div>
-			    <div>
-			    </div>
+	ChangeTask() {
+		console.log("change task", this.state);
+		if (this.state.task === "taskA") {
+			this.setState({ task: "taskB" });
+		} else {
+			this.setState({ task: "taskA" });
+		}
+		this.render();
+	}
 
-			  <h1>Predict new NFT price</h1>
-			  <div>
-			    <input type="file" accept="image/jpg,image/jpeg,image/png" onChange={(e) => this.SaveImage(e)} /><br /><br />
-			    <input type="button" id="btn" value="predict" onClick={() => this.submitData()}></input>
-			    <input type="button" id="reset" value="reset" onClick={() => this.ResetData()}></input>
-			  </div>
-			</body>
-		);
+	RenderTask() {
+		if (this.state.task === "taskA") {
+			return (
+				<>
+				<h1>Predict NFT price in the future</h1>
+			    		<div>
+			      			<label htmlFor="address">asset contract address</label><br />
+			      			<input type="text" id="address" /><br />
+		            		</div>
+
+			    		<div>
+			      			<label htmlFor="token_id">token id</label><br />
+			      			<input type="text" id="token_id" /><br />
+			    		</div>
+			    		<input type="button" id="btn" value="predict" onClick={() => this.submitData()}></input>
+			    		<input type="button" id="reset" value="reset" onClick={() => this.ResetData()}></input>
+				</>
+			);
+		} else {	
+			return (
+				<>
+			  	<h1>Predict new NFT price</h1>
+			  	<div>
+			    		<input type="file" accept="image/jpg,image/jpeg,image/png" onChange={(e) => this.SaveImage(e)} /><br /><br />
+			    		<input type="button" id="btn" value="predict" onClick={() => this.submitData()}></input>
+			    		<input type="button" id="reset" value="reset" onClick={() => this.ResetData()}></input>
+			  	</div>
+				</>
+			);
+		}
 	}
 
 	render() {
 		return (
 			<>
 			<div>
-			<div className="task_Form">{this.renderDropzone()}</div>
+			<div className="task_Form">{this.RenderTask()}</div>
+			<input type="button" id="change_task" value="change task" onClick={() => this.ChangeTask()}></input>
 			<div className="image-element">
 			{this.state.image ? <img src={this.state.image} alt="Image" /> : ""}
 			<p>result</p>
